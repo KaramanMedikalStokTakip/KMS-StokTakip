@@ -42,21 +42,40 @@ function Layout({ children }) {
       {/* Currency Ticker */}
       {currency && (
         <div className="currency-ticker" data-testid="currency-ticker">
-          <div className="currency-item">
-            <DollarSign className="w-4 h-4" />
-            <span>USD/TRY: ₺{currency.usd_try}</span>
-          </div>
-          <div className="currency-item">
-            <Euro className="w-4 h-4" />
-            <span>EUR/TRY: ₺{currency.eur_try}</span>
-          </div>
-          <div className="currency-item">
-            <TrendingUp className="w-4 h-4" />
-            <span>Altın: ₺{currency.gold_try}</span>
-          </div>
-          <div className="currency-item">
-            <TrendingUp className="w-4 h-4" />
-            <span>Gümüş: ₺{currency.silver_try}</span>
+          <div className="currency-scroll">
+            <div className="currency-item">
+              <DollarSign className="w-4 h-4" />
+              <span>USD/TRY: ₺{currency.usd_try}</span>
+            </div>
+            <div className="currency-item">
+              <Euro className="w-4 h-4" />
+              <span>EUR/TRY: ₺{currency.eur_try}</span>
+            </div>
+            <div className="currency-item">
+              <TrendingUp className="w-4 h-4" />
+              <span>Altın: ₺{currency.gold_try}</span>
+            </div>
+            <div className="currency-item">
+              <TrendingUp className="w-4 h-4" />
+              <span>Gümüş: ₺{currency.silver_try}</span>
+            </div>
+            {/* Duplicate for seamless loop */}
+            <div className="currency-item">
+              <DollarSign className="w-4 h-4" />
+              <span>USD/TRY: ₺{currency.usd_try}</span>
+            </div>
+            <div className="currency-item">
+              <Euro className="w-4 h-4" />
+              <span>EUR/TRY: ₺{currency.eur_try}</span>
+            </div>
+            <div className="currency-item">
+              <TrendingUp className="w-4 h-4" />
+              <span>Altın: ₺{currency.gold_try}</span>
+            </div>
+            <div className="currency-item">
+              <TrendingUp className="w-4 h-4" />
+              <span>Gümüş: ₺{currency.silver_try}</span>
+            </div>
           </div>
         </div>
       )}
