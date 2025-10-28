@@ -9,7 +9,55 @@ import { Switch } from '../components/ui/switch';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
-import { Moon, Sun, Plus, Trash2 } from 'lucide-react';
+import { Moon, Sun, Plus, Edit2 } from 'lucide-react';
+
+const ROLE_PERMISSIONS = {
+  'yönetici': {
+    dashboard: true,
+    stock_view: true,
+    stock_add: true,
+    stock_edit: true,
+    stock_delete: true,
+    pos: true,
+    customers_view: true,
+    customers_add: true,
+    customers_edit: true,
+    reports: true,
+    calendar: true,
+    settings: true,
+    user_management: true
+  },
+  'depo': {
+    dashboard: true,
+    stock_view: true,
+    stock_add: true,
+    stock_edit: true,
+    stock_delete: false,
+    pos: false,
+    customers_view: false,
+    customers_add: false,
+    customers_edit: false,
+    reports: false,
+    calendar: true,
+    settings: false,
+    user_management: false
+  },
+  'satış': {
+    dashboard: true,
+    stock_view: true,
+    stock_add: false,
+    stock_edit: false,
+    stock_delete: false,
+    pos: true,
+    customers_view: true,
+    customers_add: true,
+    customers_edit: true,
+    reports: true,
+    calendar: true,
+    settings: false,
+    user_management: false
+  }
+};
 
 function Settings() {
   const { user } = useAuth();
@@ -18,6 +66,9 @@ function Settings() {
   const [showLowStockAlerts, setShowLowStockAlerts] = useState(true);
   const [users, setUsers] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [permissionDialogOpen, setPermissionDialogOpen] = useState(false);
+  const [editingRole, setEditingRole] = useState(null);
+  const [rolePermissions, setRolePermissions] = useState(ROLE_PERMISSIONS);
   const [newUser, setNewUser] = useState({
     username: '',
     email: '',
@@ -29,10 +80,14 @@ function Settings() {
     const savedTheme = localStorage.getItem('theme') || 'light';
     const savedStats = localStorage.getItem('showDashboardStats') !== 'false';
     const savedAlerts = localStorage.getItem('showLowStockAlerts') !== 'false';
+    const savedPermissions = localStorage.getItem('rolePermissions');
     
     setTheme(savedTheme);
     setShowDashboardStats(savedStats);
     setShowLowStockAlerts(savedAlerts);
+    if (savedPermissions) {
+      setRolePermissions(JSON.parse(savedPermissions));
+    }
     
     applyTheme(savedTheme);
     
@@ -43,19 +98,14 @@ function Settings() {
 
   const applyTheme = (newTheme) => {
     if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-      document.body.style.backgroundColor = '#1a1a1a';
-      document.body.style.color = '#ffffff';
+      document.body.classList.add('dark-mode');
     } else {
-      document.documentElement.classList.remove('dark');
-      document.body.style.backgroundColor = '#fafafa';
-      document.body.style.color = '#000000';
+      document.body.classList.remove('dark-mode');
     }
   };
 
   const fetchUsers = async () => {
     try {
-      // Mock için şimdilik - gerçek API'ye bağlanabilir
       setUsers([
         { id: user.id, username: user.username, email: user.email, role: user.role }
       ]);
@@ -91,21 +141,53 @@ function Settings() {
     }
   };
 
+  const handlePermissionChange = (role, permission) => {
+    setRolePermissions(prev => ({
+      ...prev,
+      [role]: {
+        ...prev[role],
+        [permission]: !prev[role][permission]
+      }
+    }));
+  };
+
+  const saveRolePermissions = () => {
+    localStorage.setItem('rolePermissions', JSON.stringify(rolePermissions));
+    toast.success('Rol yetkileri kaydedildi');
+    setPermissionDialogOpen(false);
+  };
+
+  const permissionLabels = {
+    dashboard: 'Dashboard Görüntüleme',
+    stock_view: 'Stok Görüntüleme',
+    stock_add: 'Stok Ekleme',
+    stock_edit: 'Stok Düzenleme',
+    stock_delete: 'Stok Silme',
+    pos: 'Kasiyer/POS Erişimi',
+    customers_view: 'Müşteri Görüntüleme',
+    customers_add: 'Müşteri Ekleme',
+    customers_edit: 'Müşteri Düzenleme',
+    reports: 'Rapor Erişimi',
+    calendar: 'Takvim Erişimi',
+    settings: 'Ayarlar Erişimi',
+    user_management: 'Kullanıcı Yönetimi'
+  };
+
   return (
     <div className="space-y-6" data-testid="settings-page">
-      <h1 className="text-4xl font-bold text-gray-800 dark:text-white">Ayarlar</h1>
+      <h1 className="text-4xl font-bold">Ayarlar</h1>
 
       <Card className="dark:bg-gray-800 dark:border-gray-700">
         <CardHeader>
-          <CardTitle className="dark:text-white">Görünüm</CardTitle>
+          <CardTitle>Görünüm</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {theme === 'light' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               <div>
-                <Label className="dark:text-white">Karanlık Mod</Label>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Arayüzü koyu renge çevir</p>
+                <Label>Karanlık Mod</Label>
+                <p className="text-sm text-gray-500">Arayüzü koyu renge çevir</p>
               </div>
             </div>
             <Switch
@@ -119,13 +201,13 @@ function Settings() {
 
       <Card className="dark:bg-gray-800 dark:border-gray-700">
         <CardHeader>
-          <CardTitle className="dark:text-white">Dashboard Özelleştirme</CardTitle>
+          <CardTitle>Dashboard Özelleştirme</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <Label className="dark:text-white">İstatistikleri Göster</Label>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Ana sayfada satış ve stok istatistiklerini göster</p>
+              <Label>İstatistikleri Göster</Label>
+              <p className="text-sm text-gray-500">Ana sayfada satış ve stok istatistiklerini göster</p>
             </div>
             <Switch
               checked={showDashboardStats}
@@ -136,8 +218,8 @@ function Settings() {
 
           <div className="flex items-center justify-between">
             <div>
-              <Label className="dark:text-white">Düşük Stok Uyarıları</Label>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Dashboard'da düşük stok uyarılarını göster</p>
+              <Label>Düşük Stok Uyarıları</Label>
+              <p className="text-sm text-gray-500">Dashboard'da düşük stok uyarılarını göster</p>
             </div>
             <Switch
               checked={showLowStockAlerts}
@@ -153,102 +235,143 @@ function Settings() {
       </Card>
 
       {user?.role === 'yönetici' && (
-        <Card className="dark:bg-gray-800 dark:border-gray-700">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="dark:text-white">Kullanıcı Yönetimi</CardTitle>
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button data-testid="add-user-btn">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Kullanıcı Ekle
+        <>
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Kullanıcı Yönetimi</CardTitle>
+              <div className="flex gap-2">
+                <Button onClick={() => setPermissionDialogOpen(true)} variant="outline" data-testid="manage-permissions-btn">
+                  <Edit2 className="w-4 h-4 mr-2" />
+                  Rol Yetkileri
                 </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Yeni Kullanıcı Ekle</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleAddUser} className="space-y-4">
-                  <div>
-                    <Label>Kullanıcı Adı *</Label>
-                    <Input
-                      value={newUser.username}
-                      onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-                      required
-                      data-testid="new-username-input"
-                    />
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button data-testid="add-user-btn">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Kullanıcı Ekle
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Yeni Kullanıcı Ekle</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleAddUser} className="space-y-4">
+                      <div>
+                        <Label>Kullanıcı Adı *</Label>
+                        <Input
+                          value={newUser.username}
+                          onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+                          required
+                          data-testid="new-username-input"
+                        />
+                      </div>
+                      <div>
+                        <Label>E-posta *</Label>
+                        <Input
+                          type="email"
+                          value={newUser.email}
+                          onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                          required
+                          data-testid="new-email-input"
+                        />
+                      </div>
+                      <div>
+                        <Label>Şifre *</Label>
+                        <Input
+                          type="password"
+                          value={newUser.password}
+                          onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                          required
+                          data-testid="new-password-input"
+                        />
+                      </div>
+                      <div>
+                        <Label>Rol *</Label>
+                        <select
+                          className="w-full border rounded-md px-3 py-2"
+                          value={newUser.role}
+                          onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                          data-testid="new-role-select"
+                        >
+                          <option value="yönetici">Yönetici</option>
+                          <option value="depo">Depo</option>
+                          <option value="satış">Satış</option>
+                        </select>
+                      </div>
+                      <Button type="submit" className="w-full" data-testid="submit-user-btn">
+                        Kullanıcı Ekle
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {users.map((u) => (
+                  <div key={u.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div>
+                      <p className="font-medium">{u.username}</p>
+                      <p className="text-sm text-gray-500">{u.email} - {u.role}</p>
+                    </div>
                   </div>
-                  <div>
-                    <Label>E-posta *</Label>
-                    <Input
-                      type="email"
-                      value={newUser.email}
-                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                      required
-                      data-testid="new-email-input"
-                    />
-                  </div>
-                  <div>
-                    <Label>Şifre *</Label>
-                    <Input
-                      type="password"
-                      value={newUser.password}
-                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                      required
-                      data-testid="new-password-input"
-                    />
-                  </div>
-                  <div>
-                    <Label>Rol *</Label>
-                    <select
-                      className="w-full border rounded-md px-3 py-2"
-                      value={newUser.role}
-                      onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-                      data-testid="new-role-select"
-                    >
-                      <option value="yönetici">Yönetici</option>
-                      <option value="depo">Depo</option>
-                      <option value="satış">Satış</option>
-                    </select>
-                  </div>
-                  <Button type="submit" className="w-full" data-testid="submit-user-btn">
-                    Kullanıcı Ekle
-                  </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {users.map((u) => (
-                <div key={u.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div>
-                    <p className="font-medium text-gray-800 dark:text-white">{u.username}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{u.email} - {u.role}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Dialog open={permissionDialogOpen} onOpenChange={setPermissionDialogOpen}>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Rol Bazlı Yetkilendirme</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-6">
+                {Object.keys(rolePermissions).map(role => (
+                  <Card key={role}>
+                    <CardHeader>
+                      <CardTitle className="text-lg capitalize">{role}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-4">
+                        {Object.keys(permissionLabels).map(permission => (
+                          <div key={permission} className="flex items-center justify-between">
+                            <Label className="text-sm">{permissionLabels[permission]}</Label>
+                            <Switch
+                              checked={rolePermissions[role][permission]}
+                              onCheckedChange={() => handlePermissionChange(role, permission)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                <Button onClick={saveRolePermissions} className="w-full" data-testid="save-permissions-btn">
+                  Yetkileri Kaydet
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </>
       )}
 
       <Card className="dark:bg-gray-800 dark:border-gray-700">
         <CardHeader>
-          <CardTitle className="dark:text-white">Uygulama Bilgileri</CardTitle>
+          <CardTitle>Uygulama Bilgileri</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Sürüm:</span>
-              <span className="font-medium dark:text-white">1.0.0</span>
+              <span className="text-gray-600">Sürüm:</span>
+              <span className="font-medium">1.0.0</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Firma:</span>
-              <span className="font-medium dark:text-white">Karaman Sağlık Medikal</span>
+              <span className="text-gray-600">Firma:</span>
+              <span className="font-medium">Karaman Sağlık Medikal</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Platform:</span>
-              <span className="font-medium dark:text-white">Emergent.sh</span>
+              <span className="text-gray-600">Platform:</span>
+              <span className="font-medium">Emergent.sh</span>
             </div>
           </div>
         </CardContent>
